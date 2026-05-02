@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>パチンコ回転率チェッカー</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: "Yu Gothic UI", "Hiragino Kaku Gothic ProN", sans-serif;
+      background: #f3f5f8;
+      color: #1f2937;
+    }
+
+    .container {
+      max-width: 720px;
+      margin: 32px auto;
+      padding: 24px;
+      background: #ffffff;
+      border: 1px solid #d1d5db;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+    }
+
+    h1 {
+      margin-top: 0;
+      font-size: 24px;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+
+    label {
+      font-weight: 600;
+    }
+
+    input {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 10px;
+      border: 1px solid #9ca3af;
+      border-radius: 8px;
+      font-size: 16px;
+    }
+
+    .buttons {
+      margin-top: 16px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      padding: 10px 16px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    #checkButton {
+      background: #0f766e;
+      color: #ffffff;
+    }
+
+    #clearButton {
+      background: #374151;
+      color: #ffffff;
+    }
+
+    #resetButton {
+      background: #b91c1c;
+      color: #ffffff;
+    }
+
+    .error {
+      margin-top: 12px;
+      color: #b91c1c;
+      font-weight: 700;
+      min-height: 1.2em;
+    }
+
+    .result,
+    .history {
+      margin-top: 20px;
+      padding: 14px;
+      border: 1px solid #d1d5db;
+      border-radius: 10px;
+      background: #f9fafb;
+    }
+
+    .history ul {
+      margin: 8px 0 0;
+      padding-left: 20px;
+    }
+
+    .history li {
+      margin-bottom: 6px;
+    }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <h1>パチンコ回転率チェッカー</h1>
+
+    <div class="form-grid">
+      <div>
+        <label for="startKaiten">スタート回転数</label>
+        <input id="startKaiten" type="number" min="0" step="1" placeholder="例: 150">
+      </div>
+      <div>
+        <label for="investmentAmount">総投資額 (円)</label>
+        <input id="investmentAmount" type="number" min="500" step="500" placeholder="例: 10000">
+      </div>
+      <div>
+        <label for="currentKaiten">現在の回転数</label>
+        <input id="currentKaiten" type="number" min="0" step="1" placeholder="例: 380">
+      </div>
+    </div>
+
+    <div class="buttons">
+      <button id="checkButton" type="button">チェック</button>
+      <button id="clearButton" type="button">クリア</button>
+      <button id="resetButton" type="button">リセット</button>
+    </div>
+
+    <p id="errorMessage" class="error" aria-live="polite"></p>
+
+    <section class="result" aria-live="polite">
+      <h2>判定結果</h2>
+      <p>暫定回転率 (1000円あたり): <strong id="nowRate">-</strong></p>
+      <p>総回転数: <strong id="totalKaiten">-</strong></p>
+    </section>
+
+    <section class="history" aria-live="polite">
+      <h2>履歴</h2>
+      <ul id="historyList"></ul>
+    </section>
+  </main>
+
+  <script>
+    (function () {
+      // アプリケーション初期化
+      let startKaiten = 0;
+      let currentInvestment = 0;
+      let currentKaiten = 0;
+      let temporaryKaiten = 0;
+      let temporaryRate = 0.0;
+      let totalKaiten = 0;
+      let inputCount = 0;
+      let historyMap = {};
+
+      const startKaitenInput = document.getElementById("startKaiten");
+      const investmentAmountInput = document.getElementById("investmentAmount");
+      const currentKaitenInput = document.getElementById("currentKaiten");
+
+      const checkButton = document.getElementById("checkButton");
+      const clearButton = document.getElementById("clearButton");
+      const resetButton = document.getElementById("resetButton");
+
+      const errorMessage = document.getElementById("errorMessage");
+      const nowRateText = document.getElementById("nowRate");
+      const totalKaitenText = document.getElementById("totalKaiten");
+      const historyList = document.getElementById("historyList");
+
+      function showError(message) {
+        errorMessage.textContent = message;
+      }
+
+      function clearError() {
+        errorMessage.textContent = "";
+      }
+
+      function validateInputs(startValue, investmentValue, currentValue) {
+        if (startValue === "" || investmentValue === "" || currentValue === "") {
+          return "すべての項目を入力してください。";
+        }
+
+        if (!/^\d+$/.test(startValue) || !/^\d+$/.test(investmentValue) || !/^\d+$/.test(currentValue)) {
+          return "入力値は0以上の整数で入力してください。";
+        }
+
+        const start = Number(startValue);
+        const investment = Number(investmentValue);
+        const current = Number(currentValue);
+
+        if (investment <= 0) {
+          return "総投資額は1以上を入力してください。";
+        }
+
+        if (investment % 500 !== 0) {
+          return "総投資額は500円単位で入力してください。";
+        }
+
+        if (current < start) {
+          return "現在の回転数はスタート回転数以上を入力してください。";
+        }
+
+        return "";
+      }
+
+      function renderHistory() {
+        historyList.innerHTML = "";
+
+        const keys = Object.keys(historyMap).map(Number).sort(function (a, b) {
+          return a - b;
+        });
+
+        keys.forEach(function (key) {
+          const item = historyMap[key];
+          const li = document.createElement("li");
+          li.textContent = "入力回数: " + key + " / 暫定回転数: " + item.kaiten + " / 投資額: " + item.amount + "円 / 暫定回転率: " + item.now_rate.toFixed(2);
+          historyList.appendChild(li);
+        });
+      }
+
+      function resetAppState() {
+        startKaiten = 0;
+        currentInvestment = 0;
+        currentKaiten = 0;
+        temporaryKaiten = 0;
+        temporaryRate = 0.0;
+        totalKaiten = 0;
+        inputCount = 0;
+        historyMap = {};
+
+        startKaitenInput.value = "";
+        investmentAmountInput.value = "";
+        currentKaitenInput.value = "";
+
+        clearError();
+        nowRateText.textContent = "-";
+        totalKaitenText.textContent = "-";
+        renderHistory();
+      }
+
+      checkButton.addEventListener("click", function () {
+        clearError();
+
+        const validationError = validateInputs(
+          startKaitenInput.value.trim(),
+          investmentAmountInput.value.trim(),
+          currentKaitenInput.value.trim()
+        );
+
+        if (validationError) {
+          showError(validationError);
+          return;
+        }
+
+        startKaiten = Number(startKaitenInput.value);
+        currentInvestment = Number(investmentAmountInput.value);
+        currentKaiten = Number(currentKaitenInput.value);
+
+        temporaryKaiten = currentKaiten - startKaiten;
+
+        const rate = temporaryKaiten / (currentInvestment / 1000);
+        temporaryRate = Math.round(rate * 100) / 100;
+
+        totalKaiten = temporaryKaiten;
+
+        inputCount += 1;
+        historyMap[inputCount] = {
+          kaiten: temporaryKaiten,
+          amount: currentInvestment,
+          now_rate: temporaryRate
+        };
+
+        nowRateText.textContent = temporaryRate.toFixed(2);
+        totalKaitenText.textContent = String(totalKaiten);
+
+        renderHistory();
+
+        //startKaitenInput.value = "";
+        //investmentAmountInput.value = "";
+        currentKaitenInput.value = "";
+      });
+
+      clearButton.addEventListener("click", function () {
+        startKaitenInput.value = "";
+        investmentAmountInput.value = "";
+        currentKaitenInput.value = "";
+        clearError();
+      });
+
+      resetButton.addEventListener("click", function () {
+        resetAppState();
+      });
+
+      renderHistory();
+    })();
+  </script>
+</body>
+</html>
