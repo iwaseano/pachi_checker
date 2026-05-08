@@ -101,6 +101,32 @@
     .history li {
       margin-bottom: 6px;
     }
+
+    .investment-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 6px;
+    }
+
+    .investment-buttons button {
+      padding: 6px 10px;
+      font-size: 13px;
+      font-weight: 700;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .btn-plus {
+      background: #1d4ed8;
+      color: #ffffff;
+    }
+
+    .btn-minus {
+      background: #6b7280;
+      color: #ffffff;
+    }
   </style>
 </head>
 <body>
@@ -115,10 +141,34 @@
       <div>
         <label for="investmentAmount">総投資額 (円)</label>
         <input id="investmentAmount" type="number" min="500" step="500" placeholder="例: 10000">
+        <div class="investment-buttons">
+          <button type="button" class="btn-plus" data-delta="500">+500</button>
+          <button type="button" class="btn-plus" data-delta="1000">+1000</button>
+          <button type="button" class="btn-plus" data-delta="5000">+5000</button>
+          <button type="button" class="btn-plus" data-delta="10000">+10000</button>
+        </div>
+        <div class="investment-buttons">
+          <button type="button" class="btn-minus" data-delta="-500">-500</button>
+          <button type="button" class="btn-minus" data-delta="-1000">-1000</button>
+          <button type="button" class="btn-minus" data-delta="-5000">-5000</button>
+          <button type="button" class="btn-minus" data-delta="-10000">-10000</button>
+        </div>
       </div>
       <div>
         <label for="currentKaiten">現在の回転数</label>
         <input id="currentKaiten" type="number" min="0" step="1" placeholder="例: 380">
+        <div class="investment-buttons">
+          <button type="button" class="btn-plus" data-kaiten-delta="1">+1</button>
+          <button type="button" class="btn-plus" data-kaiten-delta="5">+5</button>
+          <button type="button" class="btn-plus" data-kaiten-delta="10">+10</button>
+          <button type="button" class="btn-plus" data-kaiten-delta="100">+100</button>
+        </div>
+        <div class="investment-buttons">
+          <button type="button" class="btn-minus" data-kaiten-delta="-1">-1</button>
+          <button type="button" class="btn-minus" data-kaiten-delta="-5">-5</button>
+          <button type="button" class="btn-minus" data-kaiten-delta="-10">-10</button>
+          <button type="button" class="btn-minus" data-kaiten-delta="-100">-100</button>
+        </div>
       </div>
     </div>
 
@@ -289,6 +339,24 @@
 
       resetButton.addEventListener("click", function () {
         resetAppState();
+      });
+
+      document.querySelectorAll("[data-delta]").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          const delta = Number(btn.dataset.delta);
+          const current = Number(investmentAmountInput.value) || 0;
+          const next = current + delta;
+          investmentAmountInput.value = next > 0 ? next : 0;
+        });
+      });
+
+      document.querySelectorAll("[data-kaiten-delta]").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          const delta = Number(btn.dataset.kaitenDelta);
+          const current = Number(currentKaitenInput.value) || 0;
+          const next = current + delta;
+          currentKaitenInput.value = next >= 0 ? next : 0;
+        });
       });
 
       renderHistory();
