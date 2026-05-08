@@ -93,23 +93,39 @@
       background: #f9fafb;
     }
 
-    .history ul {
-      margin: 8px 0 0;
-      padding-left: 20px;
+    .history table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 8px;
+      font-size: 14px;
     }
 
-    .history li {
-      margin-bottom: 6px;
+    .history th,
+    .history td {
+      border: 1px solid #d1d5db;
+      padding: 6px 10px;
+      text-align: right;
+    }
+
+    .history th {
+      background: #e5e7eb;
+      text-align: center;
+      font-weight: 700;
+    }
+
+    .history td:first-child {
+      text-align: center;
     }
 
     .investment-buttons {
-      display: flex;
-      flex-wrap: wrap;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
       gap: 6px;
       margin-top: 6px;
     }
 
     .investment-buttons button {
+      width: 100%;
       padding: 6px 10px;
       font-size: 13px;
       font-weight: 700;
@@ -124,7 +140,7 @@
     }
 
     .btn-minus {
-      background: #6b7280;
+      background: #80736b;
       color: #ffffff;
     }
   </style>
@@ -139,7 +155,7 @@
         <input id="startKaiten" type="number" min="0" step="1" placeholder="例: 150">
       </div>
       <div>
-        <label for="investmentAmount">総投資額 (円)</label>
+        <label for="investmentAmount">投資額 (円)</label>
         <input id="investmentAmount" type="number" min="500" step="500" placeholder="例: 10000">
         <div class="investment-buttons">
           <button type="button" class="btn-plus" data-delta="500">+500</button>
@@ -182,13 +198,26 @@
 
     <section class="result" aria-live="polite">
       <h2>判定結果</h2>
-      <p>暫定回転率 (1000円あたり): <strong id="nowRate">-</strong></p>
-      <p>総回転数: <strong id="totalKaiten">-</strong></p>
+      <p>総投資額: <strong id="totalInvestment">-</strong></p>
+      <p>回転数累計: <strong id="totalKaiten">-</strong></p>
+      <p>累積回転率 (1000円あたり): <strong id="cumulativeRate">-</strong></p>
     </section>
 
     <section class="history" aria-live="polite">
       <h2>履歴</h2>
-      <ul id="historyList"></ul>
+      <table id="historyTable">
+        <thead>
+          <tr>
+            <th>No</th>
+            <th>スタート回転数</th>
+            <th>現在の回転数</th>
+            <th>区間回転数</th>
+            <th>区間投資額 (円)</th>
+            <th>区間回転率</th>
+          </tr>
+        </thead>
+        <tbody id="historyList"></tbody>
+      </table>
     </section>
   </main>
 
@@ -200,9 +229,16 @@
       let currentKaiten = 0;
       let temporaryKaiten = 0;
       let temporaryRate = 0.0;
+      let cumulativeRate = 0.0;
       let totalKaiten = 0;
+      let totalInvestment = 0;
       let inputCount = 0;
       let historyMap = {};
+      let previousStartKaiten = null;
+      let previousSegmentKaiten = 0;
+      let previousSegmentInvestment = 0;
+      let baseKaiten = 0;
+      let baseInvestment = 0;
 
       const startKaitenInput = document.getElementById("startKaiten");
       const investmentAmountInput = document.getElementById("investmentAmount");
@@ -213,8 +249,9 @@
       const resetButton = document.getElementById("resetButton");
 
       const errorMessage = document.getElementById("errorMessage");
-      const nowRateText = document.getElementById("nowRate");
+      const totalInvestmentText = document.getElementById("totalInvestment");
       const totalKaitenText = document.getElementById("totalKaiten");
+      const cumulativeRateText = document.getElementById("cumulativeRate");
       const historyList = document.getElementById("historyList");
 
       function showError(message) {
@@ -239,11 +276,11 @@
         const current = Number(currentValue);
 
         if (investment <= 0) {
-          return "総投資額は1以上を入力してください。";
+          return "投資額は1以上を入力してください。";
         }
 
         if (investment % 500 !== 0) {
-          return "総投資額は500円単位で入力してください。";
+          return "投資額は500円単位で入力してください。";
         }
 
         if (current < start) {
@@ -262,10 +299,32 @@
 
         keys.forEach(function (key) {
           const item = historyMap[key];
-          const li = document.createElement("li");
-          li.textContent = "入力回数: " + key + " / 暫定回転数: " + item.kaiten + " / 投資額: " + item.amount + "円 / 暫定回転率: " + item.now_rate.toFixed(2);
-          historyList.appendChild(li);
+          const tr = document.createElement("tr");
+          tr.innerHTML =
+            "<td>" + key + "</td>" +
+            "<td>" + item.startKaiten + "</td>" +
+            "<td>" + item.currentKaiten + "</td>" +
+            "<td>" + item.kaiten + "</td>" +
+            "<td>" + item.input_amount + "</td>" +
+            "<td>" + item.now_rate.toFixed(2) + "</td>";
+          historyList.appendChild(tr);
         });
+      }
+
+      function sumInvestmentFromHistory() {
+        let sum = 0;
+        Object.keys(historyMap).forEach(function (key) {
+          sum += Number(historyMap[key].input_amount) || 0;
+        });
+        return sum;
+      }
+
+      function sumKaitenFromHistory() {
+        let sum = 0;
+        Object.keys(historyMap).forEach(function (key) {
+          sum += Number(historyMap[key].kaiten) || 0;
+        });
+        return sum;
       }
 
       function resetAppState() {
@@ -274,17 +333,25 @@
         currentKaiten = 0;
         temporaryKaiten = 0;
         temporaryRate = 0.0;
+        cumulativeRate = 0.0;
         totalKaiten = 0;
+        totalInvestment = 0;
         inputCount = 0;
         historyMap = {};
+        previousStartKaiten = null;
+        previousSegmentKaiten = 0;
+        previousSegmentInvestment = 0;
+        baseKaiten = 0;
+        baseInvestment = 0;
 
         startKaitenInput.value = "";
         investmentAmountInput.value = "";
         currentKaitenInput.value = "";
 
         clearError();
-        nowRateText.textContent = "-";
+        totalInvestmentText.textContent = "-";
         totalKaitenText.textContent = "-";
+        cumulativeRateText.textContent = "-";
         renderHistory();
       }
 
@@ -306,22 +373,41 @@
         currentInvestment = Number(investmentAmountInput.value);
         currentKaiten = Number(currentKaitenInput.value);
 
+        if (previousStartKaiten !== null && startKaiten !== previousStartKaiten) {
+          baseKaiten += previousSegmentKaiten;
+          baseInvestment += previousSegmentInvestment;
+        }
+
         temporaryKaiten = currentKaiten - startKaiten;
+        temporaryRate = temporaryKaiten / (currentInvestment / 1000);
+        temporaryRate = Math.round(temporaryRate * 100) / 100;
 
-        const rate = temporaryKaiten / (currentInvestment / 1000);
-        temporaryRate = Math.round(rate * 100) / 100;
-
-        totalKaiten = temporaryKaiten;
+        previousStartKaiten = startKaiten;
+        previousSegmentKaiten = temporaryKaiten;
+        previousSegmentInvestment = currentInvestment;
 
         inputCount += 1;
         historyMap[inputCount] = {
+          startKaiten: startKaiten,
+          currentKaiten: currentKaiten,
           kaiten: temporaryKaiten,
-          amount: currentInvestment,
+          input_amount: currentInvestment,
           now_rate: temporaryRate
         };
 
-        nowRateText.textContent = temporaryRate.toFixed(2);
+        totalInvestment = sumInvestmentFromHistory();
+        totalKaiten = sumKaitenFromHistory();
+
+        if (totalInvestment > 0) {
+          cumulativeRate = totalKaiten / (totalInvestment / 1000);
+          cumulativeRate = Math.round(cumulativeRate * 100) / 100;
+        } else {
+          cumulativeRate = 0;
+        }
+
+        totalInvestmentText.textContent = String(totalInvestment) + "円";
         totalKaitenText.textContent = String(totalKaiten);
+        cumulativeRateText.textContent = cumulativeRate.toFixed(2);
 
         renderHistory();
 
