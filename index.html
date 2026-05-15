@@ -82,6 +82,148 @@
       color: #ffffff;
     }
 
+    .top-buttons {
+      margin-bottom: 16px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    #usageButton {
+      background: #0d9488;
+      color: #ffffff;
+    }
+
+    #changelogButton {
+      background: #475569;
+      color: #ffffff;
+    }
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(14, 116, 144, 0.2);
+      backdrop-filter: blur(2px);
+      z-index: 1000;
+      padding: 16px;
+      box-sizing: border-box;
+    }
+
+    .modal.is-open {
+      display: flex;
+    }
+
+    .modal-content {
+      width: min(640px, 100%);
+      background: linear-gradient(180deg, #ffffff 0%, #f8fdff 100%);
+      border-radius: 16px;
+      border: 1px solid #bae6fd;
+      box-shadow: 0 20px 44px rgba(14, 116, 144, 0.18);
+      display: flex;
+      flex-direction: column;
+      max-height: 85vh;
+    }
+
+    .modal-header,
+    .modal-footer {
+      padding: 14px 18px;
+      border-bottom: 1px solid #dbeafe;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .modal-header {
+      background: linear-gradient(90deg, #ecfeff 0%, #f0f9ff 100%);
+      border-top-left-radius: 16px;
+      border-top-right-radius: 16px;
+    }
+
+    .modal-footer {
+      background: #f8fafc;
+      border-top: 1px solid #dbeafe;
+      border-bottom: none;
+      justify-content: flex-end;
+      border-bottom-left-radius: 16px;
+      border-bottom-right-radius: 16px;
+    }
+
+    .modal-header h3 {
+      margin: 0;
+      font-size: 20px;
+      letter-spacing: 0.03em;
+      color: #0f4c81;
+    }
+
+    .modal-body {
+      padding: 16px 18px;
+      overflow-y: auto;
+      line-height: 1.75;
+      background: #ffffff;
+    }
+
+    .modal-body p {
+      margin: 0 0 10px;
+      color: #1e293b;
+    }
+
+    .modal-body h4 {
+      margin: 14px 0 8px;
+      color: #0f4c81;
+      font-size: 16px;
+      background: #ecfeff;
+      border-left: 4px solid #06b6d4;
+      border-radius: 8px;
+      padding: 8px 10px;
+    }
+
+    .modal-body ul {
+      margin: 0 0 8px;
+      padding-left: 22px;
+      color: #334155;
+    }
+
+    .modal-body li {
+      margin-bottom: 6px;
+    }
+
+    .modal-close-button {
+      background: #0ea5e9;
+      color: #ffffff;
+      border-radius: 8px;
+      border: none;
+      padding: 8px 12px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 6px 12px rgba(14, 165, 233, 0.3);
+      transition: transform 0.12s ease, background 0.12s ease;
+    }
+
+    .modal-close-button:hover {
+      background: #0284c7;
+      transform: translateY(-1px);
+    }
+
+    .modal-close-icon {
+      background: transparent;
+      color: #0f4c81;
+      padding: 2px 8px;
+      font-size: 28px;
+      line-height: 1;
+      box-shadow: none;
+    }
+
+    .modal-close-icon:hover {
+      background: rgba(14, 165, 233, 0.1);
+      color: #0369a1;
+      transform: none;
+    }
+
     .error {
       margin-top: 12px;
       color: #b91c1c;
@@ -213,6 +355,11 @@
   <main class="container">
     <h1>パチンコ回転率チェッカー</h1>
 
+    <div class="top-buttons">
+      <button id="usageButton" type="button">使用方法</button>
+      <button id="changelogButton" type="button">更新履歴</button>
+    </div>
+
     <div class="form-grid">
       <div>
         <label for="startKaiten">スタート回転数</label>
@@ -287,6 +434,66 @@
     </section>
   </main>
 
+  <div id="usageModal" class="modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="usageModalTitle">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="usageModalTitle">使用方法</h3>
+        <button type="button" class="modal-close-button modal-close-icon" data-close-modal="usageModal" aria-label="閉じる">×</button>
+      </div>
+      <div class="modal-body">
+        <p>1. スタート回転数、投資額、現在の回転数を入力し、チェックを押下します。</p>
+        <p>2. 初当たりが発生したら初当たりボタンを押下します。入力フォームは0にリセットされます。</p>
+        <p>3. 投資額は初当たりからの投資額を入力してください。</p>
+        <p>4. 履歴には通常入力に加え、初当たり行が表示されます（区間回転数: 初当たり、区間回転率: X回目）。</p>
+        <p>5. 誤入力があれば該当行の削除ボタンで履歴を削除してください。</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="modal-close-button" data-close-modal="usageModal">閉じる</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="changelogModal" class="modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="changelogModalTitle">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="changelogModalTitle">更新履歴</h3>
+        <button type="button" class="modal-close-button modal-close-icon" data-close-modal="changelogModal" aria-label="閉じる">×</button>
+      </div>
+      <div class="modal-body">
+        <h4>2026/05/15 | Version 1.0.4</h4>
+        <ul>
+          <li>判定結果が正しく計算されない不具合を修正</li>
+          <li>初当たりボタンを追加</li>
+          <li>初当たり回数を履歴データに保持し、初当たり行を履歴表示に追加</li>
+        </ul>
+        <h4>2026/05/15 | Version 1.0.3</h4>
+        <ul>
+          <li>入力フォームに最大値（回転数9999、投資額999999）を設定</li>
+          <li>チェック成功時に「No.XXを追加しました」を表示</li>
+          <li>履歴テーブルのレスポンシブ表示（列幅固定・横スクロール・モバイル時padding縮小）を追加</li>
+        </ul>
+        <h4>2026/05/12 | Version 1.0.2</h4>
+        <ul>
+          <li>履歴単位削除（確認付き）を追加</li>
+          <li>削除後に総投資額・回転数累計・累積回転率を再集計するよう変更</li>
+          <li>チェック後に現在の回転数を保持するよう変更</li>
+        </ul>
+        <h4>2026/05/08 | Version 1.0.1</h4>
+        <ul>
+          <li>投資額・回転数の増減ボタンを追加</li>
+          <li>履歴を基準に総投資額・回転数累計・累積回転率を算出するよう変更</li>
+        </ul>
+        <h4>2026/05/02 | Version 1.0.0</h4>
+        <ul>
+          <li>初版作成</li>
+        </ul>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="modal-close-button" data-close-modal="changelogModal">閉じる</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     (function () {
       // アプリケーション初期化
@@ -315,6 +522,10 @@
       const hitButton = document.getElementById("hitButton");
       const clearButton = document.getElementById("clearButton");
       const resetButton = document.getElementById("resetButton");
+      const usageButton = document.getElementById("usageButton");
+      const changelogButton = document.getElementById("changelogButton");
+      const usageModal = document.getElementById("usageModal");
+      const changelogModal = document.getElementById("changelogModal");
 
       const errorMessage = document.getElementById("errorMessage");
       const totalInvestmentText = document.getElementById("totalInvestment");
@@ -335,6 +546,16 @@
       function clearError() {
         errorMessage.textContent = "";
         errorMessage.className = "error";
+      }
+
+      function openModal(modal) {
+        modal.classList.add("is-open");
+        modal.setAttribute("aria-hidden", "false");
+      }
+
+      function closeModal(modal) {
+        modal.classList.remove("is-open");
+        modal.setAttribute("aria-hidden", "true");
       }
 
       function validateInputs(startValue, investmentValue, currentValue) {
@@ -544,6 +765,47 @@
 
       resetButton.addEventListener("click", function () {
         resetAppState();
+      });
+
+      usageButton.addEventListener("click", function () {
+        openModal(usageModal);
+      });
+
+      changelogButton.addEventListener("click", function () {
+        openModal(changelogModal);
+      });
+
+      document.querySelectorAll("[data-close-modal]").forEach(function (button) {
+        button.addEventListener("click", function () {
+          const modalId = button.getAttribute("data-close-modal");
+          const modal = document.getElementById(modalId);
+          if (!modal) {
+            return;
+          }
+          closeModal(modal);
+        });
+      });
+
+      [usageModal, changelogModal].forEach(function (modal) {
+        modal.addEventListener("click", function (event) {
+          if (event.target === modal) {
+            closeModal(modal);
+          }
+        });
+      });
+
+      document.addEventListener("keydown", function (event) {
+        if (event.key !== "Escape") {
+          return;
+        }
+
+        if (usageModal.classList.contains("is-open")) {
+          closeModal(usageModal);
+        }
+
+        if (changelogModal.classList.contains("is-open")) {
+          closeModal(changelogModal);
+        }
       });
 
       historyList.addEventListener("click", function (event) {
