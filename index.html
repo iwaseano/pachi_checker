@@ -84,6 +84,13 @@
       min-height: 1.2em;
     }
 
+    .success {
+      margin-top: 12px;
+      color: #16a34a;
+      font-weight: 700;
+      min-height: 1.2em;
+    }
+
     .result,
     .history {
       margin-top: 20px;
@@ -93,11 +100,16 @@
       background: #f9fafb;
     }
 
+    .history {
+      overflow-x: auto;
+    }
+
     .history table {
       width: 100%;
       border-collapse: collapse;
       margin-top: 8px;
       font-size: 14px;
+      table-layout: fixed;
     }
 
     .history th,
@@ -113,13 +125,15 @@
       font-weight: 700;
     }
 
-    .history td:first-child {
+    .history td:first-child,
+    .history th:first-child {
+      width: 30px;
       text-align: center;
     }
 
     .history th.action-col,
     .history td.action-col {
-      width: 56px;
+      width: 30px;
       text-align: center;
     }
 
@@ -167,6 +181,27 @@
       background: #80736b;
       color: #ffffff;
     }
+
+    @media (max-width: 640px) {
+      .history table {
+        font-size: 12px;
+      }
+
+      .history th,
+      .history td {
+        padding: 4px 6px;
+      }
+
+      .history td:first-child,
+      .history th:first-child {
+        width: 30px;
+      }
+
+      .history th.action-col,
+      .history td.action-col {
+        width: 30px;
+      }
+    }
   </style>
 </head>
 <body>
@@ -176,11 +211,11 @@
     <div class="form-grid">
       <div>
         <label for="startKaiten">スタート回転数</label>
-        <input id="startKaiten" type="number" min="0" step="1" value="0" placeholder="例: 150">
+        <input id="startKaiten" type="number" min="0" max="9999" step="1" value="0" placeholder="例: 150">
       </div>
       <div>
         <label for="investmentAmount">投資額 (円)</label>
-        <input id="investmentAmount" type="number" min="500" step="500" placeholder="例: 10000">
+        <input id="investmentAmount" type="number" min="500" max="999999" step="500" placeholder="例: 10000">
         <div class="investment-buttons">
           <button type="button" class="btn-plus" data-delta="500">+500</button>
           <button type="button" class="btn-plus" data-delta="1000">+1000</button>
@@ -196,7 +231,7 @@
       </div>
       <div>
         <label for="currentKaiten">現在の回転数</label>
-        <input id="currentKaiten" type="number" min="0" step="1" placeholder="例: 380">
+        <input id="currentKaiten" type="number" min="0" max="9999" step="1" placeholder="例: 380">
         <div class="investment-buttons">
           <button type="button" class="btn-plus" data-kaiten-delta="1">+1</button>
           <button type="button" class="btn-plus" data-kaiten-delta="5">+5</button>
@@ -281,10 +316,17 @@
 
       function showError(message) {
         errorMessage.textContent = message;
+        errorMessage.className = "error";
+      }
+
+      function showSuccess(message) {
+        errorMessage.textContent = message;
+        errorMessage.className = "success";
       }
 
       function clearError() {
         errorMessage.textContent = "";
+        errorMessage.className = "error";
       }
 
       function validateInputs(startValue, investmentValue, currentValue) {
@@ -443,7 +485,9 @@
         updateSummaryFromHistory();
         renderHistory();
 
-        //startKaitenInput.value = "";
+        showSuccess("No." + inputCount + "を追加しました");
+
+        startKaitenInput.value = "0";
         //investmentAmountInput.value = "";
       });
 
