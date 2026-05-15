@@ -67,6 +67,11 @@
       color: #ffffff;
     }
 
+    #hitButton {
+      background: #1e3a8a;
+      color: #ffffff;
+    }
+
     #clearButton {
       background: #374151;
       color: #ffffff;
@@ -214,7 +219,7 @@
         <input id="startKaiten" type="number" min="0" max="9999" step="1" value="0" placeholder="例: 150">
       </div>
       <div>
-        <label for="investmentAmount">投資額 (円)</label>
+        <label for="investmentAmount">スタートまたは初当たりからの投資額 (円)</label>
         <input id="investmentAmount" type="number" min="500" max="999999" step="500" placeholder="例: 10000">
         <div class="investment-buttons">
           <button type="button" class="btn-plus" data-delta="500">+500</button>
@@ -249,6 +254,7 @@
 
     <div class="buttons">
       <button id="checkButton" type="button">チェック</button>
+      <button id="hitButton" type="button">初当たり</button>
       <button id="clearButton" type="button">クリア</button>
       <button id="resetButton" type="button">リセット</button>
     </div>
@@ -292,6 +298,7 @@
       let cumulativeRate = 0.0;
       let totalKaiten = 0;
       let totalInvestment = 0;
+      let atariCount = 0;
       let inputCount = 0;
       let historyMap = {};
       let previousStartKaiten = null;
@@ -305,6 +312,7 @@
       const currentKaitenInput = document.getElementById("currentKaiten");
 
       const checkButton = document.getElementById("checkButton");
+      const hitButton = document.getElementById("hitButton");
       const clearButton = document.getElementById("clearButton");
       const resetButton = document.getElementById("resetButton");
 
@@ -366,38 +374,50 @@
 
         keys.forEach(function (key) {
           const item = historyMap[key];
+          const kaitenText = item.is_hit ? "初当たり" : String(item.kaiten);
+          const nowRateText = item.is_hit ? String(item.atari_count) + "回目" : item.now_rate.toFixed(2);
           const tr = document.createElement("tr");
           tr.innerHTML =
             "<td>" + key + "</td>" +
             "<td>" + item.startKaiten + "</td>" +
             "<td>" + item.currentKaiten + "</td>" +
-            "<td>" + item.kaiten + "</td>" +
+            "<td>" + kaitenText + "</td>" +
             "<td>" + item.input_amount + "</td>" +
-            "<td>" + item.now_rate.toFixed(2) + "</td>" +
+            "<td>" + nowRateText + "</td>" +
             "<td class=\"action-col\"><button type=\"button\" class=\"delete-row-button\" data-key=\"" + key + "\" aria-label=\"履歴 " + key + " を削除\">&#128465;</button></td>";
           historyList.appendChild(tr);
         });
       }
 
-      function sumInvestmentFromHistory() {
-        let sum = 0;
-        Object.keys(historyMap).forEach(function (key) {
-          sum += Number(historyMap[key].input_amount) || 0;
-        });
-        return sum;
-      }
-
-      function sumKaitenFromHistory() {
-        let sum = 0;
-        Object.keys(historyMap).forEach(function (key) {
-          sum += Number(historyMap[key].kaiten) || 0;
-        });
-        return sum;
-      }
-
       function updateSummaryFromHistory() {
-        totalInvestment = sumInvestmentFromHistory();
-        totalKaiten = sumKaitenFromHistory();
+        totalInvestment = 0;
+        totalKaiten = 0;
+
+        const latestByAtariCount = {};
+
+        Object.keys(historyMap).forEach(function (key) {
+          const numericKey = Number(key);
+          const item = historyMap[key];
+
+          if (item.is_hit) {
+            return;
+          }
+
+          const countKey = String(item.atari_count);
+          const existing = latestByAtariCount[countKey];
+          if (!existing || numericKey > existing.key) {
+            latestByAtariCount[countKey] = {
+              key: numericKey,
+              item: item
+            };
+          }
+        });
+
+        Object.keys(latestByAtariCount).forEach(function (countKey) {
+          const latestItem = latestByAtariCount[countKey].item;
+          totalInvestment += Number(latestItem.input_amount) || 0;
+          totalKaiten += Number(latestItem.kaiten) || 0;
+        });
 
         if (totalInvestment > 0) {
           cumulativeRate = totalKaiten / (totalInvestment / 1000);
@@ -423,6 +443,7 @@
         cumulativeRate = 0.0;
         totalKaiten = 0;
         totalInvestment = 0;
+        atariCount = 0;
         inputCount = 0;
         historyMap = {};
         previousStartKaiten = null;
@@ -479,7 +500,8 @@
           currentKaiten: currentKaiten,
           kaiten: temporaryKaiten,
           input_amount: currentInvestment,
-          now_rate: temporaryRate
+          now_rate: temporaryRate,
+          atari_count: atariCount
         };
 
         updateSummaryFromHistory();
@@ -489,6 +511,28 @@
 
         startKaitenInput.value = "0";
         //investmentAmountInput.value = "";
+      });
+
+      hitButton.addEventListener("click", function () {
+        atariCount += 1;
+
+        inputCount += 1;
+        historyMap[inputCount] = {
+          startKaiten: "-",
+          currentKaiten: "-",
+          kaiten: 0,
+          input_amount: "-",
+          now_rate: 0,
+          atari_count: atariCount,
+          is_hit: true
+        };
+
+        updateSummaryFromHistory();
+        renderHistory();
+        showSuccess("初当たり回数を " + atariCount + " に更新しました");
+        startKaitenInput.value = "0";
+        investmentAmountInput.value = "0";
+        currentKaitenInput.value = "0";
       });
 
       clearButton.addEventListener("click", function () {
