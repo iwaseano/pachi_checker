@@ -5,6 +5,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>パチンコ回転率チェッカー</title>
   <style>
+    /* ボーダー差の色分け */
+    .border-diff-plus {
+      color: #2563eb;
+    }
+
+    .border-diff-minus {
+      color: #dc2626;
+    }
+
+    .border-diff-neutral {
+      color: #222;
+    }
+
     body {
       margin: 0;
       font-family: "Yu Gothic UI", "Hiragino Kaku Gothic ProN", sans-serif;
@@ -526,9 +539,17 @@
     </div>
 
     <div class="form-grid">
-      <div>
-        <label for="startKaiten">スタート回転数</label>
-        <input id="startKaiten" type="number" min="0" max="9999" step="1" value="0" placeholder="例: 150">
+      <div style="display: flex; gap: 12px; align-items: flex-end;">
+        <div style="flex:1;">
+          <label for="startKaiten">スタート回転数</label>
+          <input id="startKaiten" type="number" min="0" max="9999" step="1" value="0" placeholder="例: 150">
+        </div>
+        <div style="flex:1;">
+          <label for="borderKaiten">ボーダー回転数
+            <span style="font-size:12px;font-weight:400;color:#64748b;">(0.00～99.99)</span>
+          </label>
+          <input id="borderKaiten" type="number" min="0" max="99.99" step="0.01" placeholder="例: 18.50" inputmode="decimal">
+        </div>
       </div>
       <div>
         <label for="investmentAmount">スタートまたは初当たりからの投資額 (円)
@@ -588,6 +609,8 @@
             <th>総投資額</th>
             <th>回転数累計</th>
             <th>累積回転率 (1000円あたり)</th>
+            <th>ボーダー回転数</th>
+            <th>ボーダー差</th>
           </tr>
         </thead>
         <tbody>
@@ -595,6 +618,8 @@
             <td><strong id="totalInvestment">-</strong></td>
             <td><strong id="totalKaiten">-</strong></td>
             <td><strong id="cumulativeRate">-</strong></td>
+            <td><strong id="borderKaitenResult">-</strong></td>
+            <td id="borderDiffResultTd"><strong id="borderDiffResult">-</strong></td>
           </tr>
         </tbody>
       </table>
@@ -645,6 +670,11 @@
         <button type="button" class="modal-close-button modal-close-icon" data-close-modal="changelogModal" aria-label="閉じる">×</button>
       </div>
       <div class="modal-body">
+        <h4>2026/05/17 | Version 1.0.6</h4>
+        <ul>
+          <li>スタート回転数の隣にボーダー回転数入力フォームを追加（0.00～99.99、未入力可）</li>
+          <li>判定結果テーブルに「ボーダー回転数」「ボーダー差」を追加</li>
+        </ul>
         <h4>2026/05/17 | Version 1.0.5</h4>
         <ul>
           <li>初当たり表示時、現在の回転数を表示するよう変更</li>
@@ -744,6 +774,10 @@
       const changelogModal = document.getElementById("changelogModal");
       const investmentHelpModal = document.getElementById("investmentHelpModal");
       const investmentHelpButton = document.getElementById("investmentHelpButton");
+
+      const borderKaitenInput = document.getElementById("borderKaiten");
+      const borderKaitenResult = document.getElementById("borderKaitenResult");
+      const borderDiffResult = document.getElementById("borderDiffResult");
 
       const errorMessage = document.getElementById("errorMessage");
       const totalInvestmentText = document.getElementById("totalInvestment");
@@ -879,13 +913,41 @@
           totalInvestmentText.textContent = String(totalInvestment) + "円";
           totalKaitenText.textContent = String(totalKaiten);
           cumulativeRateText.textContent = cumulativeRate.toFixed(2);
-          return;
+        } else {
+          cumulativeRate = 0;
+          totalInvestmentText.textContent = "-";
+          totalKaitenText.textContent = "-";
+          cumulativeRateText.textContent = "-";
         }
 
-        cumulativeRate = 0;
-        totalInvestmentText.textContent = "-";
-        totalKaitenText.textContent = "-";
-        cumulativeRateText.textContent = "-";
+        // ボーダー回転数の表示
+        let borderVal = borderKaitenInput.value;
+        const borderDiffResultTd = document.getElementById("borderDiffResultTd");
+        if (borderVal && !isNaN(borderVal)) {
+          let borderNum = Number(borderVal);
+          borderKaitenResult.textContent = borderNum.toFixed(2);
+          if (!isNaN(cumulativeRate)) {
+            let diff = cumulativeRate - borderNum;
+            let diffStr = (diff > 0 ? "+" : "") + diff.toFixed(2);
+            borderDiffResult.textContent = diffStr;
+            // 色分け
+            borderDiffResultTd.classList.remove("border-diff-plus", "border-diff-minus", "border-diff-neutral");
+            if (diff <= -1) {
+              borderDiffResultTd.classList.add("border-diff-minus");
+            } else if (diff >= 1) {
+              borderDiffResultTd.classList.add("border-diff-plus");
+            } else {
+              borderDiffResultTd.classList.add("border-diff-neutral");
+            }
+          } else {
+            borderDiffResult.textContent = "-";
+            borderDiffResultTd.classList.remove("border-diff-plus", "border-diff-minus", "border-diff-neutral");
+          }
+        } else {
+          borderKaitenResult.textContent = "-";
+          borderDiffResult.textContent = "-";
+          borderDiffResultTd.classList.remove("border-diff-plus", "border-diff-minus", "border-diff-neutral");
+        }
       }
 
       function resetAppState() {
@@ -909,13 +971,52 @@
         startKaitenInput.value = "0";
         investmentAmountInput.value = "";
         currentKaitenInput.value = "";
+        borderKaitenInput.value = "";
 
         clearError();
         totalInvestmentText.textContent = "-";
         totalKaitenText.textContent = "-";
         cumulativeRateText.textContent = "-";
+        borderKaitenResult.textContent = "-";
         renderHistory();
       }
+      // ボーダー回転数 入力値のバリデーション（0.00～99.99 or 空白）
+      borderKaitenInput.addEventListener("input", function () {
+        let val = borderKaitenInput.value;
+        if (val === "") {
+          borderKaitenResult.textContent = "-";
+          borderDiffResult.textContent = "-";
+          return;
+        }
+        let num = Number(val);
+        if (isNaN(num) || num < 0 || num > 99.99) {
+          borderKaitenInput.value = "";
+          borderKaitenResult.textContent = "-";
+          borderDiffResult.textContent = "-";
+          showError("ボーダー回転数は0.00～99.99の間で入力してください。");
+          return;
+        }
+        borderKaitenInput.value = num.toFixed(2);
+        borderKaitenResult.textContent = num.toFixed(2);
+        // 差分も即時反映
+        if (!isNaN(cumulativeRate)) {
+          let diff = cumulativeRate - num;
+          let diffStr = (diff > 0 ? "+" : "") + diff.toFixed(2);
+          borderDiffResult.textContent = diffStr;
+          borderDiffResultTd.classList.remove("border-diff-plus", "border-diff-minus", "border-diff-neutral");
+          if (diff <= -1) {
+            borderDiffResultTd.classList.add("border-diff-minus");
+          } else if (diff >= 1) {
+            borderDiffResultTd.classList.add("border-diff-plus");
+          } else {
+            borderDiffResultTd.classList.add("border-diff-neutral");
+          }
+        } else {
+          borderDiffResult.textContent = "-";
+          borderDiffResultTd.classList.remove("border-diff-plus", "border-diff-minus", "border-diff-neutral");
+        }
+        clearError();
+      });
 
       checkButton.addEventListener("click", function () {
         clearError();
