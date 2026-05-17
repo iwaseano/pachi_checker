@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
@@ -247,6 +247,36 @@
       background: #f9fafb;
     }
 
+    .result table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 8px;
+      font-size: 14px;
+      table-layout: fixed;
+    }
+
+    .result th,
+    .result td {
+      border: 1px solid #d1d5db;
+      padding: 8px 10px;
+      text-align: right;
+    }
+
+    .result th {
+      background: #e5e7eb;
+      text-align: center;
+      font-weight: 700;
+    }
+
+    .result td {
+      text-align: right;
+      font-weight: 700;
+    }
+
+    #cumulativeRate {
+      font-size: 1.30em;
+    }
+
     .history {
       overflow-x: auto;
     }
@@ -264,6 +294,7 @@
       border: 1px solid #d1d5db;
       padding: 6px 10px;
       text-align: right;
+      vertical-align: middle;
     }
 
     .history th {
@@ -280,26 +311,105 @@
 
     .history th.action-col,
     .history td.action-col {
-      width: 30px;
+      width: 96px;
       text-align: center;
     }
 
+    .row-actions {
+      display: flex;
+      gap: 4px;
+      justify-content: center;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .edit-row-button,
     .delete-row-button {
-      width: 32px;
+      min-width: 32px;
       height: 32px;
       padding: 0;
       border: 1px solid #d1d5db;
       border-radius: 6px;
       background: #ffffff;
-      color: #b91c1c;
-      font-size: 16px;
+      font-size: 12px;
+      font-weight: 700;
       line-height: 1;
       cursor: pointer;
+    }
+
+    .edit-row-button {
+      color: #1d4ed8;
+      width: 32px;
+      font-size: 0;
+    }
+
+    .edit-row-button::before {
+      content: "✎";
+      font-size: 14px;
+      line-height: 1;
+    }
+
+    .edit-row-button:hover {
+      background: #eff6ff;
+      border-color: #bfdbfe;
+    }
+
+    .delete-row-button {
+      color: #b91c1c;
     }
 
     .delete-row-button:hover {
       background: #fef2f2;
       border-color: #fecaca;
+    }
+
+    .inline-edit-input {
+      width: 100%;
+      min-width: 0;
+      max-width: 100%;
+      box-sizing: border-box;
+      padding: 4px 6px;
+      border: 1px solid #9ca3af;
+      border-radius: 6px;
+      font-size: 12px;
+      text-align: right;
+    }
+
+    .inline-edit-buttons {
+      display: flex;
+      gap: 4px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .inline-save-button,
+    .inline-cancel-button {
+      min-width: 40px;
+      height: 28px;
+      padding: 0 6px;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      background: #ffffff;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .inline-save-button {
+      color: #166534;
+      border-color: #86efac;
+      background: #f0fdf4;
+    }
+
+    .inline-cancel-button {
+      color: #6b7280;
+      border-color: #d1d5db;
+      background: #f9fafb;
+    }
+
+    .hit-label {
+      color: #b91c1c;
+      font-weight: 700;
     }
 
     .investment-buttons {
@@ -330,6 +440,15 @@
     }
 
     @media (max-width: 640px) {
+      .result table {
+        font-size: 12px;
+      }
+
+      .result th,
+      .result td {
+        padding: 6px;
+      }
+
       .history table {
         font-size: 12px;
       }
@@ -346,7 +465,53 @@
 
       .history th.action-col,
       .history td.action-col {
-        width: 30px;
+        width: 52px;
+      }
+
+      .inline-edit-input {
+        padding: 3px 4px;
+        font-size: 11px;
+      }
+
+      .row-actions {
+        flex-direction: row;
+        flex-wrap: nowrap;
+        justify-content: center;
+      }
+
+      .inline-edit-buttons {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .edit-row-button,
+      .delete-row-button {
+        width: 22px;
+        min-width: 22px;
+        height: 22px;
+        padding: 0;
+        font-size: 0;
+      }
+
+      .edit-row-button::before {
+        content: "✎";
+        font-size: 12px;
+        line-height: 1;
+      }
+
+      .delete-row-button::before {
+        content: "🗑";
+        font-size: 11px;
+        line-height: 1;
+      }
+
+      .inline-save-button,
+      .inline-cancel-button {
+        width: 100%;
+        min-width: 0;
+        height: 24px;
+        padding: 0 4px;
+        font-size: 10px;
       }
     }
   </style>
@@ -366,7 +531,14 @@
         <input id="startKaiten" type="number" min="0" max="9999" step="1" value="0" placeholder="例: 150">
       </div>
       <div>
-        <label for="investmentAmount">スタートまたは初当たりからの投資額 (円)</label>
+        <label for="investmentAmount">スタートまたは初当たりからの投資額 (円)
+          <button id="investmentHelpButton" type="button" aria-label="投資額ヘルプ" style="background:none;border:none;padding:0 4px;cursor:pointer;vertical-align:middle;line-height:1;display:inline-flex;align-items:center;">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:inline-block;vertical-align:middle;position:relative;top:-2px;">
+              <circle cx="9" cy="9" r="8" stroke="#222" stroke-width="2" fill="#fff" />
+              <text x="9" y="12" text-anchor="middle" font-size="10" font-family='sans-serif' fill="#222" font-weight="bold">?</text>
+            </svg>
+          </button>
+        </label>
         <input id="investmentAmount" type="number" min="500" max="999999" step="500" placeholder="例: 10000">
         <div class="investment-buttons">
           <button type="button" class="btn-plus" data-delta="500">+500</button>
@@ -410,9 +582,22 @@
 
     <section class="result" aria-live="polite">
       <h2>判定結果</h2>
-      <p>総投資額: <strong id="totalInvestment">-</strong></p>
-      <p>回転数累計: <strong id="totalKaiten">-</strong></p>
-      <p>累積回転率 (1000円あたり): <strong id="cumulativeRate">-</strong></p>
+      <table aria-label="判定結果テーブル">
+        <thead>
+          <tr>
+            <th>総投資額</th>
+            <th>回転数累計</th>
+            <th>累積回転率 (1000円あたり)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong id="totalInvestment">-</strong></td>
+            <td><strong id="totalKaiten">-</strong></td>
+            <td><strong id="cumulativeRate">-</strong></td>
+          </tr>
+        </tbody>
+      </table>
     </section>
 
     <section class="history" aria-live="polite">
@@ -460,6 +645,16 @@
         <button type="button" class="modal-close-button modal-close-icon" data-close-modal="changelogModal" aria-label="閉じる">×</button>
       </div>
       <div class="modal-body">
+        <h4>2026/05/17 | Version 1.0.5</h4>
+        <ul>
+          <li>初当たり表示時、現在の回転数を表示するよう変更</li>
+          <li>チェックボタン押下時にスタート回転数が0へ戻る不具合を修正</li>
+          <li>同一大当たり回数内で前回投資額以下の入力時にアラート表示を追加</li>
+          <li>投資額ラベル右に？マークを追加し、ヘルプ表示に対応</li>
+          <li>履歴に編集マーク（編集機能）を追加</li>
+          <li>判定結果をテーブル表示へ変更</li>
+          <li>「初当たり」文言を赤文字表示に変更</li>
+        </ul>
         <h4>2026/05/15 | Version 1.0.4</h4>
         <ul>
           <li>判定結果が正しく計算されない不具合を修正</li>
@@ -494,6 +689,26 @@
     </div>
   </div>
 
+  <div id="investmentHelpModal" class="modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="investmentHelpModalTitle">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="investmentHelpModalTitle">投資額ヘルプ</h3>
+        <button type="button" class="modal-close-button modal-close-icon" data-close-modal="investmentHelpModal" aria-label="閉じる">×</button>
+      </div>
+      <div class="modal-body">
+        <p>「スタートまたは初当たりからの投資額」は、<br>現在の区間で追加した合計投資額を入力してください。<br>例: 初当たり後に追加で5,000円使った場合は、その合計額を入力します。</p>
+        <ul>
+          <li>500円単位で入力してください。</li>
+          <li>区間ごとに投資額は増加していく必要があります。</li>
+          <li>誤入力時は履歴の削除ボタンで修正できます。</li>
+        </ul>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="modal-close-button" data-close-modal="investmentHelpModal">閉じる</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     (function () {
       // アプリケーション初期化
@@ -507,6 +722,7 @@
       let totalInvestment = 0;
       let atariCount = 0;
       let inputCount = 0;
+      let editingKey = null;
       let historyMap = {};
       let previousStartKaiten = null;
       let previousSegmentKaiten = 0;
@@ -526,6 +742,8 @@
       const changelogButton = document.getElementById("changelogButton");
       const usageModal = document.getElementById("usageModal");
       const changelogModal = document.getElementById("changelogModal");
+      const investmentHelpModal = document.getElementById("investmentHelpModal");
+      const investmentHelpButton = document.getElementById("investmentHelpButton");
 
       const errorMessage = document.getElementById("errorMessage");
       const totalInvestmentText = document.getElementById("totalInvestment");
@@ -595,9 +813,24 @@
 
         keys.forEach(function (key) {
           const item = historyMap[key];
-          const kaitenText = item.is_hit ? "初当たり" : String(item.kaiten);
+          const kaitenText = item.is_hit ? "<span class=\"hit-label\">初当たり</span>" : String(item.kaiten);
           const nowRateText = item.is_hit ? String(item.atari_count) + "回目" : item.now_rate.toFixed(2);
+          const isEditing = String(editingKey) === String(key) && !item.is_hit;
           const tr = document.createElement("tr");
+
+          if (isEditing) {
+            tr.innerHTML =
+              "<td>" + key + "</td>" +
+              "<td><input type=\"number\" min=\"0\" max=\"9999\" step=\"1\" class=\"inline-edit-input edit-start\" value=\"" + item.startKaiten + "\"></td>" +
+              "<td><input type=\"number\" min=\"0\" max=\"9999\" step=\"1\" class=\"inline-edit-input edit-current\" value=\"" + item.currentKaiten + "\"></td>" +
+              "<td>" + kaitenText + "</td>" +
+              "<td><input type=\"number\" min=\"500\" max=\"999999\" step=\"500\" class=\"inline-edit-input edit-investment\" value=\"" + item.input_amount + "\"></td>" +
+              "<td>" + nowRateText + "</td>" +
+              "<td class=\"action-col\"><div class=\"inline-edit-buttons\"><button type=\"button\" class=\"inline-save-button\" data-key=\"" + key + "\">保存</button><button type=\"button\" class=\"inline-cancel-button\" data-key=\"" + key + "\">取消</button><button type=\"button\" class=\"delete-row-button\" data-key=\"" + key + "\" aria-label=\"履歴 " + key + " を削除\">&#128465;</button></div></td>";
+            historyList.appendChild(tr);
+            return;
+          }
+
           tr.innerHTML =
             "<td>" + key + "</td>" +
             "<td>" + item.startKaiten + "</td>" +
@@ -605,7 +838,7 @@
             "<td>" + kaitenText + "</td>" +
             "<td>" + item.input_amount + "</td>" +
             "<td>" + nowRateText + "</td>" +
-            "<td class=\"action-col\"><button type=\"button\" class=\"delete-row-button\" data-key=\"" + key + "\" aria-label=\"履歴 " + key + " を削除\">&#128465;</button></td>";
+            "<td class=\"action-col\"><div class=\"row-actions\">" + (item.is_hit ? "" : "<button type=\"button\" class=\"edit-row-button\" data-key=\"" + key + "\" aria-label=\"履歴 " + key + " を編集\">編集</button>") + "<button type=\"button\" class=\"delete-row-button\" data-key=\"" + key + "\" aria-label=\"履歴 " + key + " を削除\">&#128465;</button></div></td>";
           historyList.appendChild(tr);
         });
       }
@@ -687,6 +920,24 @@
       checkButton.addEventListener("click", function () {
         clearError();
 
+        // --- 同一大当たり回数内の前回投資額チェック ---
+        let prevInvestment = null;
+        const currentAtari = atariCount;
+        const keys = Object.keys(historyMap).map(Number).sort(function (a, b) { return a - b; });
+        for (let i = keys.length - 1; i >= 0; i--) {
+          const item = historyMap[keys[i]];
+          if (!item.is_hit && item.atari_count === currentAtari) {
+            prevInvestment = Number(item.input_amount);
+            break;
+          }
+        }
+        const inputInvestment = Number(investmentAmountInput.value.trim());
+        if (prevInvestment !== null && inputInvestment <= prevInvestment) {
+          showError("前回の投資額より大きい値を入力する必要があります。");
+          return;
+        }
+        // --- 追加ここまで ---
+
         const validationError = validateInputs(
           startKaitenInput.value.trim(),
           investmentAmountInput.value.trim(),
@@ -730,17 +981,19 @@
 
         showSuccess("No." + inputCount + "を追加しました");
 
-        startKaitenInput.value = "0";
+        startKaitenInput.value = String(startKaiten);
         //investmentAmountInput.value = "";
       });
 
       hitButton.addEventListener("click", function () {
         atariCount += 1;
 
+        const hitCurrentKaiten = Number(currentKaitenInput.value) || 0;
+
         inputCount += 1;
         historyMap[inputCount] = {
           startKaiten: "-",
-          currentKaiten: "-",
+          currentKaiten: hitCurrentKaiten,
           kaiten: 0,
           input_amount: "-",
           now_rate: 0,
@@ -775,6 +1028,10 @@
         openModal(changelogModal);
       });
 
+      investmentHelpButton.addEventListener("click", function () {
+        openModal(investmentHelpModal);
+      });
+
       document.querySelectorAll("[data-close-modal]").forEach(function (button) {
         button.addEventListener("click", function () {
           const modalId = button.getAttribute("data-close-modal");
@@ -786,7 +1043,7 @@
         });
       });
 
-      [usageModal, changelogModal].forEach(function (modal) {
+      [usageModal, changelogModal, investmentHelpModal].forEach(function (modal) {
         modal.addEventListener("click", function (event) {
           if (event.target === modal) {
             closeModal(modal);
@@ -806,10 +1063,101 @@
         if (changelogModal.classList.contains("is-open")) {
           closeModal(changelogModal);
         }
+
+        if (investmentHelpModal.classList.contains("is-open")) {
+          closeModal(investmentHelpModal);
+        }
       });
 
       historyList.addEventListener("click", function (event) {
         const target = event.target;
+
+        if (target.classList.contains("edit-row-button")) {
+          const editKey = target.dataset.key;
+          if (!editKey || !historyMap[editKey]) {
+            return;
+          }
+          editingKey = editKey;
+          clearError();
+          renderHistory();
+          return;
+        }
+
+        if (target.classList.contains("inline-cancel-button")) {
+          editingKey = null;
+          clearError();
+          renderHistory();
+          return;
+        }
+
+        if (target.classList.contains("inline-save-button")) {
+          const saveKey = target.dataset.key;
+          const item = historyMap[saveKey];
+          if (!saveKey || !item || item.is_hit) {
+            return;
+          }
+
+          const row = target.closest("tr");
+          if (!row) {
+            return;
+          }
+
+          const startInput = row.querySelector(".edit-start");
+          const currentInput = row.querySelector(".edit-current");
+          const investmentInput = row.querySelector(".edit-investment");
+          if (!startInput || !currentInput || !investmentInput) {
+            return;
+          }
+
+          const startValue = startInput.value.trim();
+          const currentValue = currentInput.value.trim();
+          const investmentValue = investmentInput.value.trim();
+
+          const validationError = validateInputs(startValue, investmentValue, currentValue);
+          if (validationError) {
+            showError(validationError);
+            return;
+          }
+
+          const numericKey = Number(saveKey);
+          let prevInvestment = null;
+          const sortedKeys = Object.keys(historyMap).map(Number).sort(function (a, b) {
+            return a - b;
+          });
+          sortedKeys.forEach(function (k) {
+            const candidate = historyMap[k];
+            if (k >= numericKey) {
+              return;
+            }
+            if (!candidate.is_hit && candidate.atari_count === item.atari_count) {
+              prevInvestment = Number(candidate.input_amount);
+            }
+          });
+
+          const nextInvestment = Number(investmentValue);
+          if (prevInvestment !== null && nextInvestment <= prevInvestment) {
+            showError("前回の投資額より大きい値を入力する必要があります。");
+            return;
+          }
+
+          const nextStart = Number(startValue);
+          const nextCurrent = Number(currentValue);
+          const nextKaiten = nextCurrent - nextStart;
+          const nextRate = Math.round((nextKaiten / (nextInvestment / 1000)) * 100) / 100;
+
+          item.startKaiten = nextStart;
+          item.currentKaiten = nextCurrent;
+          item.kaiten = nextKaiten;
+          item.input_amount = nextInvestment;
+          item.now_rate = nextRate;
+
+          editingKey = null;
+          updateSummaryFromHistory();
+          renderHistory();
+          showSuccess("No." + saveKey + "を更新しました");
+          return;
+        }
+
         if (!target.classList.contains("delete-row-button")) {
           return;
         }
@@ -822,6 +1170,10 @@
         const confirmed = window.confirm("No." + key + " の履歴を削除します。よろしいですか？");
         if (!confirmed) {
           return;
+        }
+
+        if (String(editingKey) === String(key)) {
+          editingKey = null;
         }
 
         delete historyMap[key];
